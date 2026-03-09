@@ -1,0 +1,101 @@
+{
+    "name": "large-xml-formatter",
+    "displayName": "Large XML Formatter",
+    "description": "Fast and safe XML formatter for very large files",
+    "publisher": "shreypurohit",
+    "version": "0.0.1",
+    "license": "MIT",
+    "keywords": [
+        "xml",
+        "formatter",
+        "formatting",
+        "large files",
+        "performance",
+        "worker threads",
+        "vscode"
+    ],
+    "engines": {
+        "vscode": "^1.109.0"
+    },
+    "files": [
+        "dist/**",
+        "README.md",
+        "CHANGELOG.md",
+        "package.json"
+    ],
+    "categories": [
+        "Formatters",
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:xml"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "large-xml-formatter.formatXmlDocument",
+                "title": "Large XML Formatter: Format XML Document"
+            },
+            {
+                "command": "large-xml-formatter.benchmarkCurrentXml",
+                "title": "Large XML Formatter: Benchmark Current XML"
+            }
+        ],
+        "configuration": {
+            "title": "Large XML Formatter",
+            "properties": {
+                "large-xml-formatter.insertFinalNewline": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Insert a trailing newline when formatting XML."
+                },
+                "large-xml-formatter.workerThresholdBytes": {
+                    "type": "number",
+                    "default": 131072,
+                    "minimum": 1024,
+                    "description": "Minimum XML document size in bytes before formatting is offloaded to a worker thread."
+                },
+                "large-xml-formatter.showFormatTiming": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show a popup with XML formatting duration after every format operation."
+                },
+                "large-xml-formatter.showFormatDetails": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Include worker, fallback, size, threshold, edit count, and token count details in format timing popups."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "pnpm run package",
+        "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+        "compile-tests": "tsc -p . --outDir out",
+        "watch-tests": "tsc -p . -w --outDir out",
+        "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+        "check-types": "tsc --noEmit",
+        "lint": "eslint src",
+        "test": "vscode-test",
+        "test:large-fixture": "pnpm run compile-tests && node --test out/largeTest/largeFixtureCopy.test.js",
+        "format": "prettier --write ."
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "22.x",
+        "@types/vscode": "^1.109.0",
+        "@vscode/test-cli": "^0.0.12",
+        "@vscode/test-electron": "^2.5.2",
+        "esbuild": "^0.27.3",
+        "eslint": "^9.39.3",
+        "npm-run-all": "^4.1.5",
+        "prettier": "^3.8.1",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.56.1"
+    }
+}
