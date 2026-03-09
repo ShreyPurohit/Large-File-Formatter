@@ -95,8 +95,8 @@ flowchart LR
 GitIngest is open source and we welcome contributions.
 
 - 🌟 **Star the repository** – Help others discover XML Formatter
-- 🐛 **Report bugs** – [Open an issue](https://github.com/ShreyPurohit/Large-XML-Formatter/issues)
-- 💡 **Suggest features** – Share ideas via [GitHub Discussions](https://github.com/ShreyPurohit/Large-XML-Formatter/discussions) or issues
+- 🐛 **Report bugs** – [Open an issue](https://github.com/ShreyPurohit/Large-File-Formatter/issues)
+- 💡 **Suggest features** – Share ideas via [GitHub Discussions](https://github.com/ShreyPurohit/Large-File-Formatter/discussions) or issues
 - 🔧 **Contribute code** – See **[CONTRIBUTING.md](CONTRIBUTING.md)** for development setup, code style, and how to submit pull requests
 
 ---

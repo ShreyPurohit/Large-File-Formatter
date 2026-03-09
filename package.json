@@ -87,6 +87,10 @@
         "test": "vscode-test",
         "format": "prettier --write ."
     },
+    "galleryBanner": {
+        "color": "#000000",
+        "theme": "dark"
+    },
     "devDependencies": {
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
@@ -116,6 +120,6 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/ShreyPurohit/Large-XML-Formatter.git"
+        "url": "https://github.com/ShreyPurohit/Large-File-Formatter.git"
     }
 }
