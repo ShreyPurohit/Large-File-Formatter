@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in improving Large XML Formatter.
+Thanks for your interest in improving Large File Formatter.
 
 ## Development setup
 
@@ -17,8 +17,8 @@ Thanks for your interest in improving Large XML Formatter.
 2. Run the `Run Extension` launch configuration (or press `F5`).
 3. In the Extension Development Host window, open an XML file.
 4. Run `Format Document` or use:
-    - `Large XML Formatter: Format XML Document`
-    - `Large XML Formatter: Benchmark Current XML`
+    - `Large File Formatter: Format Current Document`
+    - `Large File Formatter: Benchmark Current Document`
 
 ## Useful scripts
 
@@ -27,7 +27,6 @@ Thanks for your interest in improving Large XML Formatter.
 - `pnpm run check-types` - TypeScript type checking only.
 - `pnpm run lint` - ESLint checks.
 - `pnpm run test` - run extension tests.
-- `pnpm run test:large-fixture` - run large XML fixture test.
 - `pnpm run format` - format project files with Prettier.
 
 ## Code guidelines

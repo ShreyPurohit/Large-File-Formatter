@@ -1,4 +1,4 @@
-# Large XML Formatter
+# Large File Formatter
 
 Fast, safe, token-based XML formatter for very large files in VS Code & Cursor.
 
@@ -30,23 +30,23 @@ A formatter built to handle huge XML documents without blocking the editor — w
 
 ## Commands
 
-- `Large XML Formatter: Format XML Document` — format the current XML document (also bound to the standard Format Document action).
-- `Large XML Formatter: Benchmark Current XML` — measure formatting speed and token count for the active XML file.
+- `Large File Formatter: Format Current Document` — format the current XML document (also bound to the standard Format Document action).
+- `Large File Formatter: Benchmark Current Document` — measure formatting speed and token count for the active XML file.
 
 ---
 
 ## Settings
 
-- `large-xml-formatter.insertFinalNewline` (boolean, default: `true`)  
+- `large-file-formatter.insertFinalNewline` (boolean, default: `true`)  
   Append a trailing newline when formatting.
 
-- `large-xml-formatter.workerThresholdBytes` (number, default: `131072`)  
+- `large-file-formatter.workerThresholdBytes` (number, default: `131072`)  
   Minimum document size (bytes) before formatting is offloaded to a worker.
 
-- `large-xml-formatter.showFormatTiming` (boolean, default: `true`)  
+- `large-file-formatter.showFormatTiming` (boolean, default: `true`)  
   Show a popup with formatting duration after each format.
 
-- `large-xml-formatter.showFormatDetails` (boolean, default: `true`)  
+- `large-file-formatter.showFormatDetails` (boolean, default: `true`)  
   Include worker/fallback/size/edits/token details in the timing popup.
 
 ---
@@ -63,7 +63,7 @@ A formatter built to handle huge XML documents without blocking the editor — w
 
 1. Install and enable the extension in VS Code.
 2. Open an XML file and run “Format Document” or use the extension commands.
-3. Tune behavior under `Preferences → Settings → Large XML Formatter`.
+3. Tune behavior under `Preferences → Settings → Large File Formatter`.
 
 ---
 

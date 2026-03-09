@@ -1,10 +1,11 @@
 {
-    "name": "large-xml-formatter",
-    "displayName": "Large XML Formatter",
-    "description": "Fast and safe XML formatter for very large files",
-    "publisher": "shreypurohit",
+    "name": "large-file-formatter",
+    "displayName": "Large File Formatter",
+    "description": "Fast and safe formatter for very large files (XML support included)",
+    "publisher": "iamshreydxv",
     "version": "0.0.1",
     "license": "MIT",
+    "icon": "assets/formatter.png",
     "keywords": [
         "xml",
         "formatter",
@@ -20,6 +21,8 @@
     "files": [
         "dist/**",
         "README.md",
+        "assets/formatter.png",
+        "LICENSE",
         "CHANGELOG.md",
         "package.json"
     ],
@@ -34,34 +37,34 @@
     "contributes": {
         "commands": [
             {
-                "command": "large-xml-formatter.formatXmlDocument",
-                "title": "Large XML Formatter: Format XML Document"
+                "command": "large-file-formatter.formatCurrentDocument",
+                "title": "Large File Formatter: Format Current Document"
             },
             {
-                "command": "large-xml-formatter.benchmarkCurrentXml",
-                "title": "Large XML Formatter: Benchmark Current XML"
+                "command": "large-file-formatter.benchmarkCurrentDocument",
+                "title": "Large File Formatter: Benchmark Current Document"
             }
         ],
         "configuration": {
-            "title": "Large XML Formatter",
+            "title": "Large File Formatter",
             "properties": {
-                "large-xml-formatter.insertFinalNewline": {
+                "large-file-formatter.insertFinalNewline": {
                     "type": "boolean",
                     "default": true,
                     "description": "Insert a trailing newline when formatting XML."
                 },
-                "large-xml-formatter.workerThresholdBytes": {
+                "large-file-formatter.workerThresholdBytes": {
                     "type": "number",
                     "default": 131072,
                     "minimum": 1024,
                     "description": "Minimum XML document size in bytes before formatting is offloaded to a worker thread."
                 },
-                "large-xml-formatter.showFormatTiming": {
+                "large-file-formatter.showFormatTiming": {
                     "type": "boolean",
                     "default": true,
                     "description": "Show a popup with XML formatting duration after every format operation."
                 },
-                "large-xml-formatter.showFormatDetails": {
+                "large-file-formatter.showFormatDetails": {
                     "type": "boolean",
                     "default": true,
                     "description": "Include worker, fallback, size, threshold, edit count, and token count details in format timing popups."
@@ -82,7 +85,6 @@
         "check-types": "tsc --noEmit",
         "lint": "eslint src",
         "test": "vscode-test",
-        "test:large-fixture": "pnpm run compile-tests && node --test out/largeTest/largeFixtureCopy.test.js",
         "format": "prettier --write ."
     },
     "devDependencies": {
@@ -97,5 +99,23 @@
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.56.1"
+    },
+    "badges": [
+        {
+            "url": "https://img.shields.io/badge/license-MIT-blue.svg",
+            "href": "https://opensource.org/licenses/MIT",
+            "description": "MIT License"
+        }
+    ],
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "https://opensource.org/licenses/MIT",
+            "description": "MIT License"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ShreyPurohit/Large-XML-Formatter.git"
     }
 }

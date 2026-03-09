@@ -38,10 +38,10 @@ export function activate(context: vscode.ExtensionContext) {
             const edits = buildMinimalTextEdits(text, execution.formattedText);
             const elapsedMs = performance.now() - startedAt;
             const showFormatTiming = vscode.workspace
-                .getConfiguration('large-xml-formatter')
+                .getConfiguration('large-file-formatter')
                 .get<boolean>('showFormatTiming', true);
             const showFormatDetails = vscode.workspace
-                .getConfiguration('large-xml-formatter')
+                .getConfiguration('large-file-formatter')
                 .get<boolean>('showFormatDetails', true);
             if (showFormatTiming) {
                 const details = showFormatDetails
@@ -74,34 +74,37 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(provider);
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('large-xml-formatter.formatXmlDocument', async () => {
+        vscode.commands.registerCommand('large-file-formatter.formatCurrentDocument', async () => {
             await vscode.commands.executeCommand('editor.action.formatDocument');
         }),
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('large-xml-formatter.benchmarkCurrentXml', async () => {
-            const editor = vscode.window.activeTextEditor;
-            if (!editor || editor.document.languageId !== 'xml') {
-                void vscode.window.showWarningMessage(
-                    'Open an XML file to benchmark formatter performance.',
+        vscode.commands.registerCommand(
+            'large-file-formatter.benchmarkCurrentDocument',
+            async () => {
+                const editor = vscode.window.activeTextEditor;
+                if (!editor || editor.document.languageId !== 'xml') {
+                    void vscode.window.showWarningMessage(
+                        'Open an XML file to benchmark formatter performance.',
+                    );
+                    return;
+                }
+
+                const options = toXmlFormatOptions({
+                    insertSpaces: true,
+                    tabSize: 2,
+                });
+                const text = editor.document.getText();
+                const start = performance.now();
+                const result = formatXml(text, options);
+                const durationMs = performance.now() - start;
+
+                void vscode.window.showInformationMessage(
+                    `Formatted ${result.stats.tokenCount.toLocaleString()} tokens in ${durationMs.toFixed(1)} ms.`,
                 );
-                return;
-            }
-
-            const options = toXmlFormatOptions({
-                insertSpaces: true,
-                tabSize: 2,
-            });
-            const text = editor.document.getText();
-            const start = performance.now();
-            const result = formatXml(text, options);
-            const durationMs = performance.now() - start;
-
-            void vscode.window.showInformationMessage(
-                `Formatted ${result.stats.tokenCount.toLocaleString()} tokens in ${durationMs.toFixed(1)} ms.`,
-            );
-        }),
+            },
+        ),
     );
 }
 
@@ -119,7 +122,7 @@ function createRequestId(): string {
 function toXmlFormatOptions(options: vscode.FormattingOptions): XmlFormatOptions {
     const tabSize = Number.isFinite(options.tabSize) ? Math.max(1, Math.floor(options.tabSize)) : 2;
     const indentUnit = options.insertSpaces ? ' '.repeat(tabSize) : '\t';
-    const config = vscode.workspace.getConfiguration('large-xml-formatter');
+    const config = vscode.workspace.getConfiguration('large-file-formatter');
     const insertFinalNewline = config.get<boolean>('insertFinalNewline', true);
     const workerThresholdBytes = Math.max(
         1024,

@@ -10,5 +10,8 @@
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off",
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[xml]": {
+        "editor.defaultFormatter": "iamshreydxv.large-file-formatter"
+    }
 }
