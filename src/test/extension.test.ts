@@ -111,7 +111,7 @@ suite('Extension Test Suite', () => {
 
     test('Large JSON: format and write to generated folder', function () {
         this.timeout(60_000);
-        const jsonPath = path.join(testDataDir, 'large.json');
+        const jsonPath = path.join(testDataDir, 'largeJSON.json');
         if (!fs.existsSync(jsonPath)) {
             this.skip();
         }
