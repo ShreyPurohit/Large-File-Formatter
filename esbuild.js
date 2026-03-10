@@ -1,4 +1,6 @@
 const esbuild = require('esbuild');
+const fs = require('fs');
+const path = require('path');
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -23,28 +25,40 @@ const esbuildProblemMatcherPlugin = {
     },
 };
 
+const sharedBuildOptions = {
+    bundle: true,
+    format: 'cjs',
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: 'node',
+    logLevel: 'silent',
+    plugins: [esbuildProblemMatcherPlugin],
+};
+
 async function main() {
-    const ctx = await esbuild.context({
+    fs.mkdirSync(path.join(__dirname, 'dist', 'worker'), { recursive: true });
+
+    const extCtx = await esbuild.context({
+        ...sharedBuildOptions,
         entryPoints: ['src/extension.ts'],
-        bundle: true,
-        format: 'cjs',
-        minify: production,
-        sourcemap: !production,
-        sourcesContent: false,
-        platform: 'node',
         outfile: 'dist/extension.js',
         external: ['vscode'],
-        logLevel: 'silent',
-        plugins: [
-            /* add to the end of plugins array */
-            esbuildProblemMatcherPlugin,
-        ],
     });
+
+    const workerCtx = await esbuild.context({
+        ...sharedBuildOptions,
+        entryPoints: ['src/worker/formatWorker.ts'],
+        outfile: 'dist/worker/formatWorker.js',
+    });
+
     if (watch) {
-        await ctx.watch();
+        await Promise.all([extCtx.watch(), workerCtx.watch()]);
     } else {
-        await ctx.rebuild();
-        await ctx.dispose();
+        await extCtx.rebuild();
+        await workerCtx.rebuild();
+        await extCtx.dispose();
+        await workerCtx.dispose();
     }
 }
 

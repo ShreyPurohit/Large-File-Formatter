@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Worker } from 'node:worker_threads';
-import { buildMinimalTextEdits } from './xml/edits';
+import { buildMinimalTextEdits } from './common/edits';
+import { formatJson } from './json/pipeline';
 import { formatXml } from './xml/pipeline';
-import { WorkerFormatRequest, WorkerFormatResponse, XmlFormatOptions } from './types';
+import { FormatLanguage, FormatOptions, WorkerFormatRequest, WorkerFormatResponse } from './types';
 
 interface FormatExecutionResult {
     readonly formattedText: string;
@@ -14,12 +15,36 @@ interface FormatExecutionResult {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const workerClient = new XmlFormatWorkerClient(
+    const workerClient = new FormatWorkerClient(
         context.asAbsolutePath(path.join('dist', 'worker', 'formatWorker.js')),
     );
     context.subscriptions.push(workerClient);
 
-    const provider = vscode.languages.registerDocumentFormattingEditProvider('xml', {
+    const xmlProvider = vscode.languages.registerDocumentFormattingEditProvider(
+        'xml',
+        createFormatProvider('xml', workerClient),
+    );
+    context.subscriptions.push(xmlProvider);
+
+    const jsonProvider = vscode.languages.registerDocumentFormattingEditProvider(
+        'json',
+        createFormatProvider('json', workerClient),
+    );
+    context.subscriptions.push(jsonProvider);
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('large-file-formatter.formatCurrentDocument', async () => {
+            await vscode.commands.executeCommand('editor.action.formatDocument');
+        }),
+    );
+}
+
+function createFormatProvider(
+    language: FormatLanguage,
+    workerClient: FormatWorkerClient,
+): vscode.DocumentFormattingEditProvider {
+    const label = language === 'xml' ? 'XML' : 'JSON';
+    return {
         provideDocumentFormattingEdits: async (document, options, token) => {
             const startedAt = performance.now();
             if (token.isCancellationRequested) {
@@ -28,8 +53,8 @@ export function activate(context: vscode.ExtensionContext) {
 
             const text = document.getText();
             const inputBytes = Buffer.byteLength(text, 'utf8');
-            const formatOptions = toXmlFormatOptions(options);
-            const execution = await executeFormatting(text, formatOptions, workerClient);
+            const formatOptions = toFormatOptions(language, options);
+            const execution = await executeFormatting(language, text, formatOptions, workerClient);
 
             if (token.isCancellationRequested) {
                 return [];
@@ -43,20 +68,17 @@ export function activate(context: vscode.ExtensionContext) {
             const showFormatDetails = vscode.workspace
                 .getConfiguration('large-file-formatter')
                 .get<boolean>('showFormatDetails', true);
+
             if (showFormatTiming) {
-                const details = showFormatDetails
+                const message = showFormatDetails
                     ? [
-                          `Worker: ${execution.workerUsed ? 'yes' : execution.workerAttempted ? 'attempted, fallback used' : 'no'}`,
-                          `Fallback: ${execution.fallbackUsed ? 'yes' : 'no'}`,
-                          `Size: ${formatBytes(inputBytes)}`,
-                          `Threshold: ${formatBytes(formatOptions.useWorkerThresholdBytes)}`,
-                          `Edits: ${edits.length}`,
+                          `File Size: ${formatBytes(inputBytes)}`,
                           `Tokens: ${execution.tokenCount.toLocaleString()}`,
+                          `Formatting Time: ${Math.round(elapsedMs)} ms`,
+                          `Worker Thread: ${execution.workerUsed ? 'enabled' : execution.workerAttempted ? 'fallback' : 'disabled'}`,
+                          `Memory Mode: ${execution.workerUsed ? 'large-file' : 'inline'}`,
                       ].join(' | ')
-                    : '';
-                const message = details
-                    ? `XML formatted in ${elapsedMs.toFixed(1)} ms | ${details}`
-                    : `XML formatted in ${elapsedMs.toFixed(1)} ms`;
+                    : `${label} formatted in ${elapsedMs.toFixed(1)} ms`;
                 void vscode.window.showInformationMessage(message);
             }
             return edits.map((edit) =>
@@ -69,43 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
                 ),
             );
         },
-    });
-
-    context.subscriptions.push(provider);
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('large-file-formatter.formatCurrentDocument', async () => {
-            await vscode.commands.executeCommand('editor.action.formatDocument');
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand(
-            'large-file-formatter.benchmarkCurrentDocument',
-            async () => {
-                const editor = vscode.window.activeTextEditor;
-                if (!editor || editor.document.languageId !== 'xml') {
-                    void vscode.window.showWarningMessage(
-                        'Open an XML file to benchmark formatter performance.',
-                    );
-                    return;
-                }
-
-                const options = toXmlFormatOptions({
-                    insertSpaces: true,
-                    tabSize: 2,
-                });
-                const text = editor.document.getText();
-                const start = performance.now();
-                const result = formatXml(text, options);
-                const durationMs = performance.now() - start;
-
-                void vscode.window.showInformationMessage(
-                    `Formatted ${result.stats.tokenCount.toLocaleString()} tokens in ${durationMs.toFixed(1)} ms.`,
-                );
-            },
-        ),
-    );
+    };
 }
 
 export function deactivate() {
@@ -116,18 +102,19 @@ let requestCounter = 0;
 
 function createRequestId(): string {
     requestCounter += 1;
-    return `xml-format-${Date.now()}-${requestCounter}`;
+    return `format-${Date.now()}-${requestCounter}`;
 }
 
-function toXmlFormatOptions(options: vscode.FormattingOptions): XmlFormatOptions {
+function toFormatOptions(
+    language: FormatLanguage,
+    options: vscode.FormattingOptions,
+): FormatOptions {
     const tabSize = Number.isFinite(options.tabSize) ? Math.max(1, Math.floor(options.tabSize)) : 2;
     const indentUnit = options.insertSpaces ? ' '.repeat(tabSize) : '\t';
     const config = vscode.workspace.getConfiguration('large-file-formatter');
     const insertFinalNewline = config.get<boolean>('insertFinalNewline', true);
-    const workerThresholdBytes = Math.max(
-        1024,
-        config.get<number>('workerThresholdBytes', 128 * 1024),
-    );
+    const thresholdKey = language === 'xml' ? 'workerThresholdBytes' : 'jsonWorkerThresholdBytes';
+    const workerThresholdBytes = Math.max(1024, config.get<number>(thresholdKey, 128 * 1024));
 
     return {
         indentUnit,
@@ -137,14 +124,16 @@ function toXmlFormatOptions(options: vscode.FormattingOptions): XmlFormatOptions
 }
 
 async function executeFormatting(
+    language: FormatLanguage,
     text: string,
-    formatOptions: XmlFormatOptions,
-    workerClient: XmlFormatWorkerClient,
+    formatOptions: FormatOptions,
+    workerClient: FormatWorkerClient,
 ): Promise<FormatExecutionResult> {
     const shouldUseWorker =
         Buffer.byteLength(text, 'utf8') >= formatOptions.useWorkerThresholdBytes;
     if (!shouldUseWorker) {
-        const direct = formatXml(text, formatOptions);
+        const direct =
+            language === 'xml' ? formatXml(text, formatOptions) : formatJson(text, formatOptions);
         return {
             formattedText: direct.formattedText,
             workerAttempted: false,
@@ -156,6 +145,7 @@ async function executeFormatting(
 
     const workerResponse = await workerClient.format({
         requestId: createRequestId(),
+        language,
         text,
         options: formatOptions,
     });
@@ -169,8 +159,9 @@ async function executeFormatting(
         };
     }
 
-    console.warn(`XML worker formatting failed: ${workerResponse.message}`);
-    const fallback = formatXml(text, formatOptions);
+    console.warn(`Format worker failed (${language}): ${workerResponse.message}`);
+    const fallback =
+        language === 'xml' ? formatXml(text, formatOptions) : formatJson(text, formatOptions);
     return {
         formattedText: fallback.formattedText,
         workerAttempted: true,
@@ -190,7 +181,7 @@ function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-class XmlFormatWorkerClient implements vscode.Disposable {
+class FormatWorkerClient implements vscode.Disposable {
     private readonly workerPath: string;
     private readonly pending = new Map<
         string,
@@ -244,7 +235,7 @@ class XmlFormatWorkerClient implements vscode.Disposable {
         });
         worker.on('exit', (code: number) => {
             if (code !== 0) {
-                this.rejectAllPending(new Error(`XML formatter worker exited with code ${code}.`));
+                this.rejectAllPending(new Error(`Format worker exited with code ${code}.`));
             }
             this.worker = null;
         });
