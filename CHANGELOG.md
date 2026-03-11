@@ -6,6 +6,22 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-03-11
+
+### Fixed
+
+- **JSON empty arrays and objects.** Empty `[]` and `{}` are now kept on one line instead of being split across lines with wrong indentation (e.g. `[\n  ]`). Fixes formatting of large JSON files with many empty arrays/objects (e.g. report-configuration-style documents).
+- **Indentation after empty blocks.** Depth is no longer decremented when closing an empty block, so the next key keeps correct indentation.
+
+### Changed
+
+- **JSON formatter:** Empty-block handling now uses an explicit stack (`emptyBlockStack`) instead of inferring from the last output chunk, so behavior is robust against future formatter changes.
+- **`isEmptyBlock`:** Bounds check added and documented; returns `false` when the next token is out of range.
+
+### Added
+
+- **Tests:** `report-configuration.json` format-and-validate test; JSON empty-block tests (root/nested/mixed); assertion that formatted output is parseable JSON.
+
 ## [0.1.0]
 
 ### Added

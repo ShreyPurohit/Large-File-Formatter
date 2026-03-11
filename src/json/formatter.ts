@@ -1,11 +1,16 @@
 import { FormatOptions } from '../types';
 import { JsonToken } from './types';
 
+/** Tracks which currently open blocks were empty (so we close them on same line and do not decrement depth). */
+type EmptyBlockKind = 'brace' | 'bracket';
+
 export function formatJsonFromTokens(tokens: readonly JsonToken[], options: FormatOptions): string {
     const chunks: string[] = [];
     let depth = 0;
     let needIndent = true;
     let afterComma = false;
+    /** Stack of empty-block kinds: when we open an empty {} or [], we push here; on matching close we pop and keep on one line. */
+    const emptyBlockStack: EmptyBlockKind[] = [];
 
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
@@ -17,44 +22,72 @@ export function formatJsonFromTokens(tokens: readonly JsonToken[], options: Form
         }
 
         switch (token.kind) {
-            case 'braceOpen':
+            case 'braceOpen': {
+                const empty = isEmptyBlock(tokens, i, 'brace');
                 chunks.push('{');
                 depth += 1;
-                needIndent = !isEmptyBlock(tokens, i, 'brace');
-                if (!needIndent) {
+                if (empty) {
+                    emptyBlockStack.push('brace');
                     depth -= 1;
                 } else {
                     chunks.push('\n');
                 }
+                needIndent = !empty;
                 break;
-            case 'braceClose':
-                if (afterComma || chunks[chunks.length - 1] !== '\n') {
-                    chunks.push('\n');
+            }
+            case 'braceClose': {
+                const isClosingEmptyBlock =
+                    emptyBlockStack.length > 0 &&
+                    emptyBlockStack[emptyBlockStack.length - 1] === 'brace';
+                if (isClosingEmptyBlock) {
+                    emptyBlockStack.pop();
+                    chunks.push('}');
+                    // depth was not incremented for this empty block, so do not decrement
+                } else {
+                    depth = Math.max(0, depth - 1);
+                    const lastChunk = chunks[chunks.length - 1];
+                    if (afterComma || lastChunk !== '\n') {
+                        chunks.push('\n');
+                    }
+                    chunks.push(repeatIndent(options.indentUnit, depth));
+                    chunks.push('}');
                 }
-                depth = Math.max(0, depth - 1);
-                chunks.push(repeatIndent(options.indentUnit, depth));
-                chunks.push('}');
                 needIndent = false;
                 break;
-            case 'bracketOpen':
+            }
+            case 'bracketOpen': {
+                const empty = isEmptyBlock(tokens, i, 'bracket');
                 chunks.push('[');
                 depth += 1;
-                needIndent = !isEmptyBlock(tokens, i, 'bracket');
-                if (!needIndent) {
+                if (empty) {
+                    emptyBlockStack.push('bracket');
                     depth -= 1;
                 } else {
                     chunks.push('\n');
                 }
+                needIndent = !empty;
                 break;
-            case 'bracketClose':
-                if (afterComma || chunks[chunks.length - 1] !== '\n') {
-                    chunks.push('\n');
+            }
+            case 'bracketClose': {
+                const isClosingEmptyBlock =
+                    emptyBlockStack.length > 0 &&
+                    emptyBlockStack[emptyBlockStack.length - 1] === 'bracket';
+                if (isClosingEmptyBlock) {
+                    emptyBlockStack.pop();
+                    chunks.push(']');
+                    // depth was not incremented for this empty block, so do not decrement
+                } else {
+                    depth = Math.max(0, depth - 1);
+                    const lastChunk = chunks[chunks.length - 1];
+                    if (afterComma || lastChunk !== '\n') {
+                        chunks.push('\n');
+                    }
+                    chunks.push(repeatIndent(options.indentUnit, depth));
+                    chunks.push(']');
                 }
-                depth = Math.max(0, depth - 1);
-                chunks.push(repeatIndent(options.indentUnit, depth));
-                chunks.push(']');
                 needIndent = false;
                 break;
+            }
             case 'comma':
                 chunks.push(',');
                 chunks.push('\n');
@@ -91,14 +124,21 @@ export function formatJsonFromTokens(tokens: readonly JsonToken[], options: Form
     return formatted;
 }
 
+/**
+ * Returns true if the block opened at openIndex is immediately closed (no content).
+ * Used to keep empty {} and [] on one line and to avoid decrementing depth on their close.
+ */
 function isEmptyBlock(
     tokens: readonly JsonToken[],
     openIndex: number,
     type: 'brace' | 'bracket',
 ): boolean {
+    const nextIndex = openIndex + 1;
+    if (nextIndex >= tokens.length) {
+        return false;
+    }
     const closeKind = type === 'brace' ? 'braceClose' : 'bracketClose';
-    const next = tokens[openIndex + 1];
-    return next?.kind === closeKind;
+    return tokens[nextIndex].kind === closeKind;
 }
 
 function repeatIndent(indentUnit: string, depth: number): string {

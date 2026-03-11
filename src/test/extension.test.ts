@@ -76,6 +76,80 @@ suite('Extension Test Suite', () => {
         assert.ok(formatted.includes('42'));
     });
 
+    test('JSON formatter keeps empty arrays and objects on one line', () => {
+        const json = '{"a":[],"b":{},"c":[1,2]}';
+        const tokenized = tokenizeJson(json);
+        const formatted = formatJsonFromTokens(tokenized.tokens, {
+            indentUnit: '  ',
+            insertFinalNewline: false,
+            useWorkerThresholdBytes: 128 * 1024,
+        });
+        assert.ok(formatted.includes('"a": []'), 'empty array should stay as []');
+        assert.ok(formatted.includes('"b": {}'), 'empty object should stay as {}');
+    });
+
+    test('JSON empty blocks: root and nested never break structure or indentation', () => {
+        const formatOpts = {
+            indentUnit: '  ',
+            insertFinalNewline: false,
+            useWorkerThresholdBytes: 128 * 1024,
+        };
+        const cases: { json: string; mustContain: string[]; description: string }[] = [
+            { json: '{}', mustContain: ['{}'], description: 'root empty object' },
+            { json: '[]', mustContain: ['[]'], description: 'root empty array' },
+            { json: '[[]]', mustContain: ['[', '  []', ']'], description: 'nested empty array' },
+            { json: '[{}]', mustContain: ['[', '  {}', ']'], description: 'empty object in array' },
+            { json: '{"a":[]}', mustContain: ['"a": []'], description: 'empty array value' },
+            { json: '{"a":{}}', mustContain: ['"a": {}'], description: 'empty object value' },
+            {
+                json: '{"a":[],"b":{},"c":[1]}',
+                mustContain: ['"a": []', '"b": {}', '"c": [', '1', ']'],
+                description: 'mixed empty and non-empty',
+            },
+            {
+                json: '[[],[],[]]',
+                mustContain: ['[]', '[]', '[]'],
+                description: 'multiple empty arrays in array',
+            },
+        ];
+        for (const { json, mustContain, description } of cases) {
+            const tokenized = tokenizeJson(json);
+            assert.strictEqual(
+                tokenized.diagnostics.length,
+                0,
+                `${description}: tokenizer should not emit diagnostics`,
+            );
+            const formatted = formatJsonFromTokens(tokenized.tokens, formatOpts);
+            for (const sub of mustContain) {
+                assert.ok(
+                    formatted.includes(sub),
+                    `${description}: formatted should contain "${sub}"`,
+                );
+            }
+            const result = formatJson(json, { ...formatOpts, insertFinalNewline: true });
+            assert.strictEqual(
+                result.stats.usedFallback,
+                false,
+                `${description}: pipeline structure validation must pass`,
+            );
+            JSON.parse(result.formattedText.trim());
+        }
+    });
+
+    test('JSON formatted output is valid parseable JSON', () => {
+        const json = '{"a":[],"b":{},"nested":{"x":[],"y":[{}]}}';
+        const result = formatJson(json, {
+            indentUnit: '  ',
+            insertFinalNewline: true,
+            useWorkerThresholdBytes: 128 * 1024,
+        });
+        assert.strictEqual(result.stats.usedFallback, false);
+        assert.doesNotThrow(
+            () => JSON.parse(result.formattedText.trim()),
+            'formatted output must be valid JSON',
+        );
+    });
+
     test('JSON pipeline returns deterministic output and stats', () => {
         const json = '{"a":1,"b":[true,false,null]}';
         const result = formatJson(json, {
@@ -125,6 +199,31 @@ suite('Extension Test Suite', () => {
         assert.ok(result.stats.tokenCount > 0);
         fs.mkdirSync(generatedDir, { recursive: true });
         const outPath = path.join(generatedDir, 'large.formatted.json');
+        fs.writeFileSync(outPath, result.formattedText, 'utf8');
+        assert.ok(fs.existsSync(outPath));
+    });
+
+    test('report-configuration.json: format and validate structure', function () {
+        this.timeout(60_000);
+        const jsonPath = path.join(testDataDir, 'report-configuration.json');
+        if (!fs.existsSync(jsonPath)) {
+            this.skip();
+        }
+        const text = fs.readFileSync(jsonPath, 'utf8');
+        const result = formatJson(text, {
+            indentUnit: '  ',
+            insertFinalNewline: true,
+            useWorkerThresholdBytes: 128 * 1024,
+        });
+        assert.ok(result.formattedText.length > 0, 'formatted output should be non-empty');
+        assert.ok(result.stats.tokenCount > 0, 'should have tokenized content');
+        assert.strictEqual(
+            result.stats.usedFallback,
+            false,
+            `formatting should pass structure validation; diagnostics: ${JSON.stringify(result.diagnostics)}`,
+        );
+        fs.mkdirSync(generatedDir, { recursive: true });
+        const outPath = path.join(generatedDir, 'report-configuration.formatted.json');
         fs.writeFileSync(outPath, result.formattedText, 'utf8');
         assert.ok(fs.existsSync(outPath));
     });

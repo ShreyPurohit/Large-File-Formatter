@@ -3,7 +3,7 @@
     "displayName": "Large File Formatter",
     "description": "Fast and safe formatter for very large files",
     "publisher": "iamshreydxv",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "license": "MIT",
     "icon": "assets/formatter.png",
     "keywords": [
