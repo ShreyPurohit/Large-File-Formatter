@@ -1,13 +1,14 @@
 {
     "name": "large-file-formatter",
     "displayName": "Large File Formatter",
-    "description": "Fast and safe formatter for very large files (XML support included)",
+    "description": "Fast and safe formatter for very large files",
     "publisher": "iamshreydxv",
-    "version": "0.0.1",
+    "version": "0.1.1",
     "license": "MIT",
     "icon": "assets/formatter.png",
     "keywords": [
         "xml",
+        "json",
         "formatter",
         "formatting",
         "large files",
@@ -16,10 +17,10 @@
         "vscode"
     ],
     "engines": {
-        "vscode": "^1.109.0"
+        "vscode": "^1.60.0"
     },
     "files": [
-        "dist/**",
+        "dist/**/*.js",
         "README.md",
         "assets/formatter.png",
         "LICENSE",
@@ -31,7 +32,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onLanguage:xml"
+        "onLanguage:xml",
+        "onLanguage:json"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -39,10 +41,6 @@
             {
                 "command": "large-file-formatter.formatCurrentDocument",
                 "title": "Large File Formatter: Format Current Document"
-            },
-            {
-                "command": "large-file-formatter.benchmarkCurrentDocument",
-                "title": "Large File Formatter: Benchmark Current Document"
             }
         ],
         "configuration": {
@@ -51,7 +49,7 @@
                 "large-file-formatter.insertFinalNewline": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Insert a trailing newline when formatting XML."
+                    "description": "Insert a trailing newline when formatting XML or JSON."
                 },
                 "large-file-formatter.workerThresholdBytes": {
                     "type": "number",
@@ -59,10 +57,16 @@
                     "minimum": 1024,
                     "description": "Minimum XML document size in bytes before formatting is offloaded to a worker thread."
                 },
+                "large-file-formatter.jsonWorkerThresholdBytes": {
+                    "type": "number",
+                    "default": 131072,
+                    "minimum": 1024,
+                    "description": "Minimum JSON document size in bytes before formatting is offloaded to a worker thread."
+                },
                 "large-file-formatter.showFormatTiming": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Show a popup with XML formatting duration after every format operation."
+                    "description": "Show a popup with formatting duration after every format operation."
                 },
                 "large-file-formatter.showFormatDetails": {
                     "type": "boolean",
@@ -94,7 +98,7 @@
     "devDependencies": {
         "@types/mocha": "^10.0.10",
         "@types/node": "22.x",
-        "@types/vscode": "^1.109.0",
+        "@types/vscode": "^1.60.0",
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.5.2",
         "esbuild": "^0.27.3",

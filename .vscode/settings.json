@@ -13,5 +13,8 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "[xml]": {
         "editor.defaultFormatter": "iamshreydxv.large-file-formatter"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "iamshreydxv.large-file-formatter"
     }
 }

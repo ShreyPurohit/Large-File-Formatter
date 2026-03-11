@@ -18,7 +18,6 @@ Thanks for your interest in improving Large File Formatter.
 3. In the Extension Development Host window, open an XML file.
 4. Run `Format Document` or use:
     - `Large File Formatter: Format Current Document`
-    - `Large File Formatter: Benchmark Current Document`
 
 ## Useful scripts
 

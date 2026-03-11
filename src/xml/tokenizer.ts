@@ -1,10 +1,10 @@
-import { TokenizeResult, XmlDiagnostic, XmlToken, XmlTokenKind } from '../types';
+import { Diagnostic, TokenizeResult, XmlToken, XmlTokenKind } from '../types';
 
 const WHITESPACE_ONLY_RE = /^\s*$/;
 
 export function tokenizeXml(input: string): TokenizeResult {
     const tokens: XmlToken[] = [];
-    const diagnostics: XmlDiagnostic[] = [];
+    const diagnostics: Diagnostic[] = [];
     let cursor = 0;
 
     while (cursor < input.length) {
@@ -34,7 +34,7 @@ export function tokenizeXml(input: string): TokenizeResult {
 function tryReadToken(
     input: string,
     start: number,
-    diagnostics: XmlDiagnostic[],
+    diagnostics: Diagnostic[],
 ): { token: XmlToken; nextCursor: number } {
     if (input.startsWith('<!--', start)) {
         return readFixedTerminatedToken(input, start, '-->', 'comment', diagnostics);
@@ -62,7 +62,7 @@ function readFixedTerminatedToken(
     start: number,
     terminator: string,
     kind: Extract<XmlTokenKind, 'comment' | 'cdata' | 'declaration' | 'processingInstruction'>,
-    diagnostics: XmlDiagnostic[],
+    diagnostics: Diagnostic[],
 ): { token: XmlToken; nextCursor: number } {
     const endAt = input.indexOf(terminator, start);
     const end = endAt === -1 ? input.length : endAt + terminator.length;
@@ -83,7 +83,7 @@ function readFixedTerminatedToken(
 function readDoctypeToken(
     input: string,
     start: number,
-    diagnostics: XmlDiagnostic[],
+    diagnostics: Diagnostic[],
 ): { token: XmlToken; nextCursor: number } {
     let cursor = start + '<!DOCTYPE'.length;
     let quote: '"' | "'" | null = null;
@@ -127,7 +127,7 @@ function readTagToken(
     input: string,
     start: number,
     defaultKind: 'openTag' | 'closeTag',
-    diagnostics: XmlDiagnostic[],
+    diagnostics: Diagnostic[],
 ): { token: XmlToken; nextCursor: number } {
     const end = findTagEnd(input, start);
     if (end === -1) {

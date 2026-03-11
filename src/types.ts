@@ -1,3 +1,33 @@
+/** Shared diagnostic shape for all languages. */
+export type DiagnosticSeverity = 'info' | 'warning' | 'error';
+
+export interface Diagnostic {
+    readonly severity: DiagnosticSeverity;
+    readonly message: string;
+    readonly start: number;
+    readonly end: number;
+}
+
+/** Shared format options for worker and all language pipelines. */
+export interface FormatOptions {
+    readonly indentUnit: string;
+    readonly insertFinalNewline: boolean;
+    readonly useWorkerThresholdBytes: number;
+}
+
+export interface FormatStats {
+    readonly tokenCount: number;
+    readonly durationMs: number;
+    readonly usedFallback: boolean;
+}
+
+/** Shared format result shape for worker and all language pipelines. */
+export interface FormatResult {
+    readonly formattedText: string;
+    readonly diagnostics: Diagnostic[];
+    readonly stats: FormatStats;
+}
+
 export type XmlTokenKind =
     | 'declaration'
     | 'doctype'
@@ -32,36 +62,14 @@ interface XmlSpecialToken extends XmlTokenBase {
 
 export type XmlToken = XmlTagToken | XmlTextToken | XmlSpecialToken;
 
-type XmlDiagnosticSeverity = 'info' | 'warning' | 'error';
-
-export interface XmlDiagnostic {
-    readonly severity: XmlDiagnosticSeverity;
-    readonly message: string;
-    readonly start: number;
-    readonly end: number;
-}
-
 export interface TokenizeResult {
     readonly tokens: XmlToken[];
-    readonly diagnostics: XmlDiagnostic[];
+    readonly diagnostics: Diagnostic[];
 }
 
-export interface XmlFormatOptions {
-    readonly indentUnit: string;
-    readonly insertFinalNewline: boolean;
-    readonly useWorkerThresholdBytes: number;
-}
-
-interface XmlFormatStats {
-    readonly tokenCount: number;
-    readonly durationMs: number;
-    readonly usedFallback: boolean;
-}
-
-export interface XmlFormatResult {
-    readonly formattedText: string;
-    readonly diagnostics: XmlDiagnostic[];
-    readonly stats: XmlFormatStats;
+export interface StructuralValidationResult {
+    readonly isValid: boolean;
+    readonly diagnostics: Diagnostic[];
 }
 
 export interface TextOffsetEdit {
@@ -70,21 +78,19 @@ export interface TextOffsetEdit {
     readonly newText: string;
 }
 
-export interface StructuralValidationResult {
-    readonly isValid: boolean;
-    readonly diagnostics: XmlDiagnostic[];
-}
+export type FormatLanguage = 'xml' | 'json';
 
 export interface WorkerFormatRequest {
     readonly requestId: string;
+    readonly language: FormatLanguage;
     readonly text: string;
-    readonly options: XmlFormatOptions;
+    readonly options: FormatOptions;
 }
 
 export interface WorkerFormatSuccess {
     readonly requestId: string;
     readonly ok: true;
-    readonly result: XmlFormatResult;
+    readonly result: FormatResult;
     readonly edits: TextOffsetEdit[];
 }
 

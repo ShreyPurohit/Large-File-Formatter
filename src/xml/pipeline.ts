@@ -1,9 +1,9 @@
-import { XmlFormatOptions, XmlFormatResult } from '../types';
+import { FormatOptions, FormatResult } from '../types';
 import { formatXmlFromTokens } from './formatter';
 import { tokenizeXml } from './tokenizer';
 import { validateStructure } from './validation';
 
-export function formatXml(text: string, options: XmlFormatOptions): XmlFormatResult {
+export function formatXml(text: string, options: FormatOptions): FormatResult {
     const start = performance.now();
     const tokenized = tokenizeXml(text);
     const candidate = formatXmlFromTokens(tokenized.tokens, options);

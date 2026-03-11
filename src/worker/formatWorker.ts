@@ -5,16 +5,20 @@ import {
     WorkerFormatResponse,
     WorkerFormatSuccess,
 } from '../types';
+import { buildMinimalTextEdits } from '../common/edits';
+import { formatJson } from '../json/pipeline';
 import { formatXml } from '../xml/pipeline';
-import { buildMinimalTextEdits } from '../xml/edits';
 
 if (parentPort === null) {
-    throw new Error('XML format worker started without parent port.');
+    throw new Error('Format worker started without parent port.');
 }
 
 parentPort.on('message', (request: WorkerFormatRequest) => {
     try {
-        const result = formatXml(request.text, request.options);
+        const result =
+            request.language === 'xml'
+                ? formatXml(request.text, request.options)
+                : formatJson(request.text, request.options);
         const edits = buildMinimalTextEdits(request.text, result.formattedText);
         const response: WorkerFormatSuccess = {
             requestId: request.requestId,

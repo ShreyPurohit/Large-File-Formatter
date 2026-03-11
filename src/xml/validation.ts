@@ -1,4 +1,4 @@
-import { StructuralValidationResult, XmlDiagnostic, XmlToken } from '../types';
+import { Diagnostic, StructuralValidationResult, XmlToken } from '../types';
 
 export function validateStructure(
     originalTokens: readonly XmlToken[],
@@ -11,7 +11,7 @@ export function validateStructure(
         return { isValid: true, diagnostics: [] };
     }
 
-    const diagnostics: XmlDiagnostic[] = [
+    const diagnostics: Diagnostic[] = [
         {
             severity: 'warning',
             message: 'Formatted output failed structure validation; using fallback output.',
