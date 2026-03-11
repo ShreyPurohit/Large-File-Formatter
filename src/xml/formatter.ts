@@ -1,9 +1,6 @@
-import { XmlFormatOptions, XmlToken } from '../types';
+import { FormatOptions, XmlToken } from '../types';
 
-export function formatXmlFromTokens(
-    tokens: readonly XmlToken[],
-    options: XmlFormatOptions,
-): string {
+export function formatXmlFromTokens(tokens: readonly XmlToken[], options: FormatOptions): string {
     const chunks: string[] = [];
     let depth = 0;
     let previousToken: XmlToken | null = null;

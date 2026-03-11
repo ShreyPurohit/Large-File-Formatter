@@ -62,29 +62,20 @@ interface XmlSpecialToken extends XmlTokenBase {
 
 export type XmlToken = XmlTagToken | XmlTextToken | XmlSpecialToken;
 
-/** @deprecated Use Diagnostic. Kept for XML module compatibility. */
-export type XmlDiagnostic = Diagnostic;
-
 export interface TokenizeResult {
     readonly tokens: XmlToken[];
-    readonly diagnostics: XmlDiagnostic[];
+    readonly diagnostics: Diagnostic[];
 }
 
-/** @deprecated Use FormatOptions. Kept for XML module compatibility. */
-export type XmlFormatOptions = FormatOptions;
-
-/** @deprecated Use FormatResult. Kept for XML module compatibility. */
-export interface XmlFormatResult extends FormatResult {}
+export interface StructuralValidationResult {
+    readonly isValid: boolean;
+    readonly diagnostics: Diagnostic[];
+}
 
 export interface TextOffsetEdit {
     readonly start: number;
     readonly end: number;
     readonly newText: string;
-}
-
-export interface StructuralValidationResult {
-    readonly isValid: boolean;
-    readonly diagnostics: XmlDiagnostic[];
 }
 
 export type FormatLanguage = 'xml' | 'json';
