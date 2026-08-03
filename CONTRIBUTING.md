@@ -15,7 +15,7 @@ Thanks for your interest in improving Large File Formatter.
 
 1. Open this repository in VS Code.
 2. Run the `Run Extension` launch configuration (or press `F5`).
-3. In the Extension Development Host window, open an XML file.
+3. In the Extension Development Host window, open an XML, JSON, or HTML file.
 4. Run `Format Document` or use:
     - `Large File Formatter: Format Current Document`
 

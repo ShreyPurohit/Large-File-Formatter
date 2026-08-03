@@ -6,6 +6,16 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-03
+
+### Added
+
+- **HTML formatting support.** Format large HTML files with the same worker-thread pipeline as XML/JSON (tokenize → format → validate → minimal edits).
+- **HTML-aware tokenizer.** Handles DOCTYPE, comments, void elements (`br`, `img`, …), and raw-text elements (`script`, `style`, `textarea`, `title`, …) without parsing inner markup.
+- **Per-language worker threshold for HTML.** New setting `large-file-formatter.htmlWorkerThresholdBytes` (default 131072).
+- **Activation for HTML.** Extension activates on `onLanguage:html`.
+- **Shared language dispatcher.** `formatDocument` / language labels / threshold keys in `common/pipelines.ts` so XML, JSON, and HTML share one registration path.
+
 ## [0.1.1] - 2026-03-11
 
 ### Fixed

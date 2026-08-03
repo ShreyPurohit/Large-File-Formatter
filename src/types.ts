@@ -78,7 +78,7 @@ export interface TextOffsetEdit {
     readonly newText: string;
 }
 
-export type FormatLanguage = 'xml' | 'json';
+export type FormatLanguage = 'xml' | 'json' | 'html';
 
 export interface WorkerFormatRequest {
     readonly requestId: string;

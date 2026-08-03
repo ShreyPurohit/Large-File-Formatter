@@ -3,12 +3,13 @@
     "displayName": "Large File Formatter",
     "description": "Fast and safe formatter for very large files",
     "publisher": "iamshreydxv",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "license": "MIT",
     "icon": "assets/formatter.png",
     "keywords": [
         "xml",
         "json",
+        "html",
         "formatter",
         "formatting",
         "large files",
@@ -33,7 +34,8 @@
     ],
     "activationEvents": [
         "onLanguage:xml",
-        "onLanguage:json"
+        "onLanguage:json",
+        "onLanguage:html"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -49,7 +51,7 @@
                 "large-file-formatter.insertFinalNewline": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Insert a trailing newline when formatting XML or JSON."
+                    "description": "Insert a trailing newline when formatting XML, JSON, or HTML."
                 },
                 "large-file-formatter.workerThresholdBytes": {
                     "type": "number",
@@ -62,6 +64,12 @@
                     "default": 131072,
                     "minimum": 1024,
                     "description": "Minimum JSON document size in bytes before formatting is offloaded to a worker thread."
+                },
+                "large-file-formatter.htmlWorkerThresholdBytes": {
+                    "type": "number",
+                    "default": 131072,
+                    "minimum": 1024,
+                    "description": "Minimum HTML document size in bytes before formatting is offloaded to a worker thread."
                 },
                 "large-file-formatter.showFormatTiming": {
                     "type": "boolean",

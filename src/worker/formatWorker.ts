@@ -6,8 +6,7 @@ import {
     WorkerFormatSuccess,
 } from '../types';
 import { buildMinimalTextEdits } from '../common/edits';
-import { formatJson } from '../json/pipeline';
-import { formatXml } from '../xml/pipeline';
+import { formatDocument } from '../common/pipelines';
 
 if (parentPort === null) {
     throw new Error('Format worker started without parent port.');
@@ -15,10 +14,7 @@ if (parentPort === null) {
 
 parentPort.on('message', (request: WorkerFormatRequest) => {
     try {
-        const result =
-            request.language === 'xml'
-                ? formatXml(request.text, request.options)
-                : formatJson(request.text, request.options);
+        const result = formatDocument(request.language, request.text, request.options);
         const edits = buildMinimalTextEdits(request.text, result.formattedText);
         const response: WorkerFormatSuccess = {
             requestId: request.requestId,
