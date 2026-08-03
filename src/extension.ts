@@ -1,9 +1,8 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
 import { Worker } from 'node:worker_threads';
+import * as path from 'path';
+import * as vscode from 'vscode';
 import { buildMinimalTextEdits } from './common/edits';
-import { formatJson } from './json/pipeline';
-import { formatXml } from './xml/pipeline';
+import { formatDocument, LANGUAGE_LABELS, WORKER_THRESHOLD_CONFIG_KEYS } from './common/pipelines';
 import { FormatLanguage, FormatOptions, WorkerFormatRequest, WorkerFormatResponse } from './types';
 
 interface FormatExecutionResult {
@@ -14,23 +13,21 @@ interface FormatExecutionResult {
     readonly tokenCount: number;
 }
 
+const SUPPORTED_LANGUAGES: readonly FormatLanguage[] = ['xml', 'json', 'html'];
+
 export function activate(context: vscode.ExtensionContext) {
     const workerClient = new FormatWorkerClient(
         context.asAbsolutePath(path.join('dist', 'worker', 'formatWorker.js')),
     );
     context.subscriptions.push(workerClient);
 
-    const xmlProvider = vscode.languages.registerDocumentFormattingEditProvider(
-        'xml',
-        createFormatProvider('xml', workerClient),
-    );
-    context.subscriptions.push(xmlProvider);
-
-    const jsonProvider = vscode.languages.registerDocumentFormattingEditProvider(
-        'json',
-        createFormatProvider('json', workerClient),
-    );
-    context.subscriptions.push(jsonProvider);
+    for (const language of SUPPORTED_LANGUAGES) {
+        const provider = vscode.languages.registerDocumentFormattingEditProvider(
+            language,
+            createFormatProvider(language, workerClient),
+        );
+        context.subscriptions.push(provider);
+    }
 
     context.subscriptions.push(
         vscode.commands.registerCommand('large-file-formatter.formatCurrentDocument', async () => {
@@ -43,7 +40,7 @@ function createFormatProvider(
     language: FormatLanguage,
     workerClient: FormatWorkerClient,
 ): vscode.DocumentFormattingEditProvider {
-    const label = language === 'xml' ? 'XML' : 'JSON';
+    const label = LANGUAGE_LABELS[language];
     return {
         provideDocumentFormattingEdits: async (document, options, token) => {
             const startedAt = performance.now();
@@ -113,7 +110,7 @@ function toFormatOptions(
     const indentUnit = options.insertSpaces ? ' '.repeat(tabSize) : '\t';
     const config = vscode.workspace.getConfiguration('large-file-formatter');
     const insertFinalNewline = config.get<boolean>('insertFinalNewline', true);
-    const thresholdKey = language === 'xml' ? 'workerThresholdBytes' : 'jsonWorkerThresholdBytes';
+    const thresholdKey = WORKER_THRESHOLD_CONFIG_KEYS[language];
     const workerThresholdBytes = Math.max(1024, config.get<number>(thresholdKey, 128 * 1024));
 
     return {
@@ -132,8 +129,7 @@ async function executeFormatting(
     const shouldUseWorker =
         Buffer.byteLength(text, 'utf8') >= formatOptions.useWorkerThresholdBytes;
     if (!shouldUseWorker) {
-        const direct =
-            language === 'xml' ? formatXml(text, formatOptions) : formatJson(text, formatOptions);
+        const direct = formatDocument(language, text, formatOptions);
         return {
             formattedText: direct.formattedText,
             workerAttempted: false,
@@ -160,8 +156,7 @@ async function executeFormatting(
     }
 
     console.warn(`Format worker failed (${language}): ${workerResponse.message}`);
-    const fallback =
-        language === 'xml' ? formatXml(text, formatOptions) : formatJson(text, formatOptions);
+    const fallback = formatDocument(language, text, formatOptions);
     return {
         formattedText: fallback.formattedText,
         workerAttempted: true,

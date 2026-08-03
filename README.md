@@ -1,8 +1,8 @@
 # Large File Formatter
 
-Fast, safe, token-based formatter for very large **XML** and **JSON** files in VS Code & Cursor.
+Fast, safe, token-based formatter for very large **XML**, **JSON**, and **HTML** files in VS Code & Cursor.
 
-A formatter built to handle huge XML and JSON documents without blocking the editor — with structural safety checks, minimal edits, worker-thread offloading and performance visibility.
+A formatter built to handle huge documents without blocking the editor — with structural safety checks, minimal edits, worker-thread offloading and performance visibility.
 
 ---
 
@@ -12,10 +12,10 @@ A formatter built to handle huge XML and JSON documents without blocking the edi
   Offloads formatting to a Node worker when a file exceeds a configurable byte threshold (per language) so VS Code stays responsive.
 
 - Structural validation with automatic safe fallback  
-  Re-tokenizes formatted output and compares a structural signature; if the structure changes, the extension preserves the original content to avoid corrupting XML or JSON.
+  Re-tokenizes formatted output and compares a structural signature; if the structure changes, the extension preserves the original content to avoid corrupting XML, JSON, or HTML.
 
-- Token-aware tokenizer & formatter (XML and JSON)  
-  XML: declarations, DOCTYPE, processing instructions, comments, CDATA, quoted attributes. JSON: objects, arrays, strings, numbers, literals — more robust than regex-based formatters.
+- Token-aware tokenizer & formatter (XML, JSON, and HTML)  
+  XML: declarations, DOCTYPE, processing instructions, comments, CDATA, quoted attributes. JSON: objects, arrays, strings, numbers, literals. HTML: void elements, comments, DOCTYPE, and raw-text elements (`script`, `style`, `textarea`, `title`, …) — more robust than regex-based formatters.
 
 - Minimal, offset-based edits  
   Computes the smallest replacement range and applies only that edit to reduce undo churn and preserve editor state (selections, cursors).
@@ -30,11 +30,11 @@ A formatter built to handle huge XML and JSON documents without blocking the edi
 
 ## Our formatter vs normal formatters
 
-|                          | Normal formatters                          | Large File Formatter                              |
-| ------------------------ | ------------------------------------------ | ------------------------------------------------- |
-| **Where it runs**        | Main thread (same as the editor)           | Worker thread for large files                     |
-| **On huge files**        | Editor can freeze or time out              | Stays responsive; work runs off the main thread   |
-| **Speed on large files** | Often slow or unusable (MB-sized XML/JSON) | Much lower formatting time for the same file size |
+|                          | Normal formatters                       | Large File Formatter                              |
+| ------------------------ | --------------------------------------- | ------------------------------------------------- |
+| **Where it runs**        | Main thread (same as the editor)        | Worker thread for large files                     |
+| **On huge files**        | Editor can freeze or time out           | Stays responsive; work runs off the main thread   |
+| **Speed on large files** | Often slow or unusable (MB-sized files) | Much lower formatting time for the same file size |
 
 **Example (XML, ~20 MB file):**
 
@@ -52,20 +52,23 @@ That’s a format time that most built-in or main-thread formatters cannot match
 
 ## Commands
 
-- `Large File Formatter: Format Current Document` — format the current XML or JSON document (also bound to the standard Format Document action).
+- `Large File Formatter: Format Current Document` — format the current XML, JSON, or HTML document (also bound to the standard Format Document action).
 
 ---
 
 ## Settings
 
 - `large-file-formatter.insertFinalNewline` (boolean, default: `true`)  
-  Append a trailing newline when formatting XML or JSON.
+  Append a trailing newline when formatting XML, JSON, or HTML.
 
 - `large-file-formatter.workerThresholdBytes` (number, default: `131072`)  
   Minimum XML document size (bytes) before formatting is offloaded to a worker.
 
 - `large-file-formatter.jsonWorkerThresholdBytes` (number, default: `131072`)  
   Minimum JSON document size (bytes) before formatting is offloaded to a worker.
+
+- `large-file-formatter.htmlWorkerThresholdBytes` (number, default: `131072`)  
+  Minimum HTML document size (bytes) before formatting is offloaded to a worker.
 
 - `large-file-formatter.showFormatTiming` (boolean, default: `true`)  
   Show a popup with formatting duration after each format.
@@ -77,7 +80,7 @@ That’s a format time that most built-in or main-thread formatters cannot match
 
 ## Why choose this formatter?
 
-- Designed for very large XML and JSON files where main-thread formatters can freeze the editor.
+- Designed for very large XML, JSON, and HTML files where main-thread formatters can freeze the editor.
 - Prioritizes safety — structural validation plus automatic fallback prevents accidental corruption.
 - Minimizes editor churn through minimal-range edits and provides visibility into performance and decisions.
 
@@ -86,7 +89,7 @@ That’s a format time that most built-in or main-thread formatters cannot match
 ## Quick start
 
 1. Install and enable the extension in VS Code.
-2. Open an XML or JSON file and run “Format Document” or use the extension commands.
+2. Open an XML, JSON, or HTML file and run “Format Document” or use the extension commands.
 3. Tune behavior under `Preferences → Settings → Large File Formatter`.
 
 ---
@@ -97,14 +100,18 @@ That’s a format time that most built-in or main-thread formatters cannot match
 flowchart TB
   Editor --> XmlProv[XML Provider]
   Editor --> JsonProv[JSON Provider]
+  Editor --> HtmlProv[HTML Provider]
   XmlProv --> Client[FormatWorkerClient]
   JsonProv --> Client
+  HtmlProv --> Client
   Client -->|language + options| Worker[Worker]
   Worker --> Dispatch{Dispatch}
   Dispatch -->|xml| XmlPipeline[XML pipeline]
   Dispatch -->|json| JsonPipeline[JSON pipeline]
+  Dispatch -->|html| HtmlPipeline[HTML pipeline]
   XmlPipeline --> Edits[Minimal edits]
   JsonPipeline --> Edits
+  HtmlPipeline --> Edits
   Edits --> Provider
 ```
 
@@ -112,8 +119,9 @@ flowchart TB
 
 ## Known constraints
 
-- XML: avoids aggressive reflow in mixed-content nodes to preserve semantics.
-- For malformed XML or JSON, the formatter may fall back to the original input to guarantee safety.
+- XML/HTML: avoids aggressive reflow in mixed-content nodes to preserve semantics.
+- HTML: void elements (`br`, `img`, …) are treated as self-closing for indentation; `script`/`style`/`textarea`/`title` content is preserved as raw text.
+- For malformed XML, JSON, or HTML, the formatter may fall back to the original input to guarantee safety.
 
 ---
 

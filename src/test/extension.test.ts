@@ -3,6 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as vscode from 'vscode';
+import { tokenizeHtml } from '../html/tokenizer';
+import { formatHtmlFromTokens } from '../html/formatter';
+import { formatHtml } from '../html/pipeline';
 import { tokenizeJson } from '../json/tokenizer';
 import { formatJsonFromTokens } from '../json/formatter';
 import { formatJson } from '../json/pipeline';
@@ -161,6 +164,56 @@ suite('Extension Test Suite', () => {
         assert.ok(result.stats.tokenCount > 0);
         assert.strictEqual(typeof result.stats.durationMs, 'number');
         assert.strictEqual(typeof result.stats.usedFallback, 'boolean');
+    });
+
+    test('HTML tokenizer emits tags, void elements, and comments', () => {
+        const html =
+            '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hi</title></head><body><!--c--><br><img src="x"></body></html>';
+        const tokenized = tokenizeHtml(html);
+        assert.strictEqual(tokenized.diagnostics.length, 0);
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'doctype'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'openTag' && t.name === 'html'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'selfClosingTag' && t.name === 'br'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'selfClosingTag' && t.name === 'img'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'selfClosingTag' && t.name === 'meta'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'comment'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'closeTag' && t.name === 'html'));
+    });
+
+    test('HTML tokenizer preserves script raw content', () => {
+        const html = '<script>if (a < b && c > d) {}</script>';
+        const tokenized = tokenizeHtml(html);
+        assert.strictEqual(tokenized.diagnostics.length, 0);
+        const text = tokenized.tokens.find((t) => t.kind === 'text' && !t.isWhitespaceOnly);
+        assert.ok(text);
+        assert.ok(text!.raw.includes('a < b'));
+        assert.ok(tokenized.tokens.some((t) => t.kind === 'closeTag' && t.name === 'script'));
+    });
+
+    test('HTML formatter preserves inline mixed content', () => {
+        const html = '<p>Hello <strong>world</strong>!</p>';
+        const tokenized = tokenizeHtml(html);
+        const formatted = formatHtmlFromTokens(tokenized.tokens, {
+            indentUnit: '  ',
+            insertFinalNewline: false,
+            useWorkerThresholdBytes: 128 * 1024,
+        });
+        assert.ok(formatted.includes('<strong>world</strong>'));
+    });
+
+    test('HTML pipeline returns deterministic output and stats', () => {
+        const html = '<div><span>a</span><br><img src="x"></div>';
+        const result = formatHtml(html, {
+            indentUnit: '  ',
+            insertFinalNewline: true,
+            useWorkerThresholdBytes: 128 * 1024,
+        });
+        assert.ok(result.formattedText.length > 0);
+        assert.ok(result.stats.tokenCount > 0);
+        assert.strictEqual(result.stats.usedFallback, false);
+        assert.strictEqual(typeof result.stats.durationMs, 'number');
+        assert.ok(result.formattedText.includes('<br>'));
+        assert.ok(result.formattedText.includes('<img src="x">'));
     });
 
     test('Large XML: format and write to generated folder', function () {
