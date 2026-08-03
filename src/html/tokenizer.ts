@@ -239,11 +239,7 @@ function createTagToken(
 }
 
 function extractTagName(raw: string): string {
-    const content = raw
-        .replace(/^<\//, '')
-        .replace(/^</, '')
-        .replace(/\/?>$/, '')
-        .trimStart();
+    const content = raw.replace(/^<\//, '').replace(/^</, '').replace(/\/?>$/, '').trimStart();
     const end = content.search(/[\s/>]/);
     const name = end === -1 ? content : content.slice(0, end);
     return name.toLowerCase();

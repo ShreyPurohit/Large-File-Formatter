@@ -1,10 +1,7 @@
 import { FormatOptions } from '../types';
 import { HtmlToken } from './types';
 
-export function formatHtmlFromTokens(
-    tokens: readonly HtmlToken[],
-    options: FormatOptions,
-): string {
+export function formatHtmlFromTokens(tokens: readonly HtmlToken[], options: FormatOptions): string {
     const chunks: string[] = [];
     let depth = 0;
     let previousToken: HtmlToken | null = null;
